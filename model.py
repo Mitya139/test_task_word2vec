@@ -14,9 +14,9 @@ class SkipGramNegativeSamplingModel:
             low=-0.5 / embedding_dim,
             high=0.5 / embedding_dim,
             size=(vocab_size, embedding_dim),
-        )
+        ).astype(np.float32)
 
-        self.output_embeddings = np.zeros((vocab_size, embedding_dim))
+        self.output_embeddings = np.zeros((vocab_size, embedding_dim), dtype=np.float32)
 
     def sigmoid(self, x):
         x = np.clip(x, -10, 10)
@@ -28,9 +28,9 @@ class SkipGramNegativeSamplingModel:
             positive_id: int,
             negative_ids: list[int],
     ) -> dict:
-        center_vector = self.input_embeddings[center_id].copy()
-        positive_vector = self.output_embeddings[positive_id].copy()
-        negative_vectors = self.output_embeddings[negative_ids].copy()
+        center_vector = self.input_embeddings[center_id]
+        positive_vector = self.output_embeddings[positive_id]
+        negative_vectors = self.output_embeddings[negative_ids]
 
         positive_score = np.dot(center_vector, positive_vector)
         negative_scores = np.dot(negative_vectors, center_vector)
@@ -88,17 +88,18 @@ class SkipGramNegativeSamplingModel:
             self,
             center_id: int,
             positive_id: int,
-            negative_ids: list[int],
+            negative_ids: np.ndarray,
             gradients: dict,
             learning_rate: float,
     ):
         self.input_embeddings[center_id] -= learning_rate * gradients["grad_center"]
         self.output_embeddings[positive_id] -= learning_rate * gradients["grad_positive_output"]
 
-        for i, negative_id in enumerate(negative_ids):
-            self.output_embeddings[negative_id] -= (
-                    learning_rate * gradients["grad_negative_outputs"][i]
-            )
+        np.add.at(
+            self.output_embeddings,
+            negative_ids,
+            -learning_rate * gradients["grad_negative_outputs"],
+        )
 
     def train_one_pair(
             self,
