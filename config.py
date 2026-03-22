@@ -19,7 +19,7 @@ class Config:
     epochs: int = 1
 
     # Subsampling of frequent words
-    subsample_t: float = 1e-5
+    subsample_t: float = 0
 
     # Reproducibility / logging
     seed: int = 42

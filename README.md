@@ -96,3 +96,8 @@ After training, the learned weights are available in:
 The main embedding matrix for similarity search is usually `input_embeddings.npy`.
 
 You can see example of my `loss_curve` and `loss_history` in `outputs` folder of repo.
+
+## Example of query for my model:
+![img.png](img.png)
+
+[Link to my input_embeddings](https://drive.google.com/file/d/1pROSyf3Wnmdz4wu1MiI6zmg1ZqXUIWbn/view?usp=sharing)

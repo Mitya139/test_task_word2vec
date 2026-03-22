@@ -140,28 +140,28 @@ def compute_subsampling_keep_probs(
     return keep_probs
 
 
-def subsample_encoded_reviews(
-        encoded_reviews: list[list[int]],
-        counts: list[int],
-        t: float,
-        seed: int = 42,
-) -> list[list[int]]:
-    keep_probs = compute_subsampling_keep_probs(counts=counts, t=t)
-    rng = np.random.default_rng(seed)
-
-    subsampled_reviews = []
-
-    for review_ids in encoded_reviews:
-        review_array = np.asarray(review_ids, dtype=np.int32)
-        random_values = rng.random(len(review_array))
-        mask = random_values < keep_probs[review_array]
-
-        subsampled_ids = review_array[mask].tolist()
-
-        if len(subsampled_ids) >= 2:
-            subsampled_reviews.append(subsampled_ids)
-
-    return subsampled_reviews
+# def subsample_encoded_reviews(
+#         encoded_reviews: list[list[int]],
+#         counts: list[int],
+#         t: float,
+#         seed: int = 42,
+# ) -> list[list[int]]:
+#     keep_probs = compute_subsampling_keep_probs(counts=counts, t=t)
+#     rng = np.random.default_rng(seed)
+#
+#     subsampled_reviews = []
+#
+#     for review_ids in encoded_reviews:
+#         review_array = np.asarray(review_ids, dtype=np.int32)
+#         random_values = rng.random(len(review_array))
+#         mask = random_values < keep_probs[review_array]
+#
+#         subsampled_ids = review_array[mask].tolist()
+#
+#         if len(subsampled_ids) >= 2:
+#             subsampled_reviews.append(subsampled_ids)
+#
+#     return subsampled_reviews
 
 
 def generate_skipgram_pairs_for_review(
@@ -205,14 +205,14 @@ def preprocess_corpus(config: Config) -> PreprocessData:
         word_to_id=word_to_id,
     )
 
-    subsample_t = getattr(config, "subsample_t", 0.0)
-    if subsample_t and subsample_t > 0:
-        encoded_reviews = subsample_encoded_reviews(
-            encoded_reviews=encoded_reviews,
-            counts=counts,
-            t=subsample_t,
-            seed=config.seed,
-        )
+    # subsample_t = getattr(config, "subsample_t", 0.0)
+    # if subsample_t and subsample_t > 0:
+    #     encoded_reviews = subsample_encoded_reviews(
+    #         encoded_reviews=encoded_reviews,
+    #         counts=counts,
+    #         t=subsample_t,
+    #         seed=config.seed,
+    #     )
 
     return PreprocessData(
         raw_reviews=raw_reviews,
