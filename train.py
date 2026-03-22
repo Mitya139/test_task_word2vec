@@ -83,11 +83,9 @@ def train(config: Config):
             )
 
             for center_id, positive_id in pairs:
-                progress = global_step / total_steps
-                current_lr = max(
-                    config.min_learning_rate,
-                    config.learning_rate * (1.0 - progress)
-                )
+                if global_step % 10000 == 0:
+                    progress = global_step / total_steps
+                    current_lr = max(config.min_learning_rate, config.learning_rate * (1.0 - progress))
                 negative_ids = sampler.sample(
                     num_negative=config.num_negative,
                     positive_id=positive_id,

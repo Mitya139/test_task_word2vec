@@ -6,7 +6,7 @@ from preprocess import preprocess_corpus
 
 class NegativeSampler:
     def __init__(self, counts: list[int], power: float = 0.75, seed: int = 42, table_size: int = 10 ** 7):
-        self.counts = np.array(counts, dtype=np.float32)
+        self.counts = np.array(counts, dtype=np.float64)
         self.power = power
         self.rng = np.random.default_rng(seed)
         self.vocab_size = len(counts)

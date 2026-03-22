@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 import kagglehub
 import re
+import numpy as np
 import pandas as pd
 from collections import Counter
 from dataclasses import dataclass
@@ -71,9 +72,9 @@ def tokenize_reviews(reviews: list[str]) -> list[list[str]]:
 
 
 def build_vocab(
-    tokenized_reviews: list[list[str]],
-    min_count: int = 5,
-    max_vocab_size: int | None = None,
+        tokenized_reviews: list[list[str]],
+        min_count: int = 5,
+        max_vocab_size: int | None = None,
 ) -> tuple[dict[str, int], list[str], list[int]]:
     counter = Counter()
 
@@ -105,8 +106,8 @@ def build_vocab(
 
 
 def encode_reviews(
-    tokenized_reviews: list[list[str]],
-    word_to_id: dict[str, int],
+        tokenized_reviews: list[list[str]],
+        word_to_id: dict[str, int],
 ) -> list[list[int]]:
     encoded_reviews = []
 
@@ -123,9 +124,49 @@ def encode_reviews(
     return encoded_reviews
 
 
+def compute_subsampling_keep_probs(
+        counts: list[int],
+        t: float,
+) -> np.ndarray:
+    counts_array = np.asarray(counts, dtype=np.float32)
+    frequencies = counts_array / counts_array.sum()
+
+    if t <= 0:
+        return np.ones_like(frequencies, dtype=np.float32)
+
+    keep_probs = (np.sqrt(frequencies / t) + 1.0) * (t / frequencies)
+    keep_probs = np.clip(keep_probs, 0.0, 1.0)
+
+    return keep_probs
+
+
+def subsample_encoded_reviews(
+        encoded_reviews: list[list[int]],
+        counts: list[int],
+        t: float,
+        seed: int = 42,
+) -> list[list[int]]:
+    keep_probs = compute_subsampling_keep_probs(counts=counts, t=t)
+    rng = np.random.default_rng(seed)
+
+    subsampled_reviews = []
+
+    for review_ids in encoded_reviews:
+        review_array = np.asarray(review_ids, dtype=np.int32)
+        random_values = rng.random(len(review_array))
+        mask = random_values < keep_probs[review_array]
+
+        subsampled_ids = review_array[mask].tolist()
+
+        if len(subsampled_ids) >= 2:
+            subsampled_reviews.append(subsampled_ids)
+
+    return subsampled_reviews
+
+
 def generate_skipgram_pairs_for_review(
-    review_ids: list[int],
-    window_size: int,
+        review_ids: list[int],
+        window_size: int,
 ) -> list[tuple[int, int]]:
     pairs = []
     n = len(review_ids)
@@ -146,15 +187,6 @@ def generate_skipgram_pairs_for_review(
     return pairs
 
 
-def generate_skipgram_pairs(
-    encoded_reviews: list[list[int]],
-    window_size: int,
-):
-    for review_ids in encoded_reviews:
-        for pair in generate_skipgram_pairs_for_review(review_ids, window_size):
-            yield pair
-
-
 def preprocess_corpus(config: Config) -> PreprocessData:
     raw_reviews = load_reviews(config)
     tokenized_reviews = tokenize_reviews(raw_reviews)
@@ -172,6 +204,15 @@ def preprocess_corpus(config: Config) -> PreprocessData:
         tokenized_reviews=tokenized_reviews,
         word_to_id=word_to_id,
     )
+
+    subsample_t = getattr(config, "subsample_t", 0.0)
+    if subsample_t and subsample_t > 0:
+        encoded_reviews = subsample_encoded_reviews(
+            encoded_reviews=encoded_reviews,
+            counts=counts,
+            t=subsample_t,
+            seed=config.seed,
+        )
 
     return PreprocessData(
         raw_reviews=raw_reviews,

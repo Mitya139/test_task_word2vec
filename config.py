@@ -8,6 +8,7 @@ class Config:
     dataset_filename: str = "IMDB Dataset.csv"
 
     # Model / optimization
+    max_vocab_size: int | None = None
     min_count: int = 5
     embedding_dim: int = 128
     window_size: int = 2
@@ -16,6 +17,9 @@ class Config:
     learning_rate: float = 0.025
     min_learning_rate: float = 0.0001
     epochs: int = 1
+
+    # Subsampling of frequent words
+    subsample_t: float = 1e-5
 
     # Reproducibility / logging
     seed: int = 42
