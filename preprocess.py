@@ -53,10 +53,10 @@ def load_reviews(config: Config) -> list[str]:
 
 def tokenize_text(text: str) -> list[str]:
     text = text.lower()
-    text = re.sub(HTML_BREAK_RE, " ", text)
-    text = re.sub(HTML_TAG_RE, " ", text)
+    text = HTML_BREAK_RE.sub(" ", text)
+    text = HTML_TAG_RE.sub(" ", text)
 
-    tokens = re.findall(TOKEN_RE, text)
+    tokens = TOKEN_RE.findall(text)
     return tokens
 
 

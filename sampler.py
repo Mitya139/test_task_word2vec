@@ -5,28 +5,41 @@ from preprocess import preprocess_corpus
 
 
 class NegativeSampler:
-    def __init__(self, counts: list[int], power: float = 0.75, seed: int = 42):
+    def __init__(self, counts: list[int], power: float = 0.75, seed: int = 42, table_size: int = 10 ** 7):
         self.counts = np.array(counts, dtype=np.float64)
         self.power = power
         self.rng = np.random.default_rng(seed)
+        self.vocab_size = len(counts)
 
         adjusted_counts = self.counts ** self.power
         self.probabilities = adjusted_counts / adjusted_counts.sum()
 
-        self.vocab_size = len(counts)
+        self.table_size = table_size
+        self.table = np.zeros(self.table_size, dtype=np.int32)
+
+        # Building unigram table for fast sampling
+        count_idx = 0
+        cumulative_prob = self.probabilities[count_idx]
+
+        for i in range(self.table_size):
+            self.table[i] = count_idx
+
+            if i / self.table_size > cumulative_prob:
+                count_idx += 1
+                if count_idx >= self.vocab_size:
+                    count_idx = self.vocab_size - 1
+                cumulative_prob += self.probabilities[count_idx]
 
     def sample(self, num_negative: int, positive_id: int | None = None) -> list[int]:
-        negative_ids = []
+        indices = self.rng.integers(0, self.table_size, size=num_negative)
+        negative_ids = self.table[indices]
 
-        while len(negative_ids) < num_negative:
-            sampled_id = int(self.rng.choice(self.vocab_size, p=self.probabilities))
+        if positive_id is not None:
+            for i in range(num_negative):
+                while negative_ids[i] == positive_id:
+                    negative_ids[i] = self.table[self.rng.integers(0, self.table_size)]
 
-            if positive_id is not None and sampled_id == positive_id:
-                continue
-
-            negative_ids.append(sampled_id)
-
-        return negative_ids
+        return negative_ids.tolist()
 
 
 if __name__ == "__main__":

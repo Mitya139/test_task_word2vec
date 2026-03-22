@@ -13,7 +13,7 @@ class Config:
     num_negative: int = 10
     negative_sampling_power: float = 0.75
     learning_rate: float = 0.025
-    epochs: int = 2
+    epochs: int = 1
 
     # Reproducibility / logging
     seed: int = 42
